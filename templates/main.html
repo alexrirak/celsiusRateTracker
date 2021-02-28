@@ -1,0 +1,52 @@
+<html>
+    <head>
+        <link href="/static/css/style.css" rel="stylesheet">
+    </head>
+
+    <body>
+        {% if 'staging' == env %}
+            <div class="staging"></div>
+        {% endif %}
+        <div class="comparison">
+
+            <table>
+                <thead>
+                    <tr>
+                        <th class="compare-heading">
+                            Coin
+                        </th>
+                        <th class="compare-heading">
+                            Ticker
+                        </th>
+                        <th class="compare-heading">
+                            Rate
+                        </th>
+                        <th class="compare-heading">
+                            Change
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for coin in interestRates %}
+                        <tr class="compare-row">
+                            <td>
+                                <div class="coinLogo">
+                                    <img class="coinLogo" src="{{ coin['currency']['image_url'] }}">
+                                </div>
+                            </td>
+                            <td>{{ coin['coin']  }}</td>
+                            <td>{{ "%.2f"|format(coin['rate'] | float * 100)  }} %</td>
+                            <td></td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <div>
+                Rate data from Celsius Developer API. This website is not affiliated with Celsius. All logos property of their respective owners.
+            </div>
+
+        </div>
+
+    </body>
+
+</html>
