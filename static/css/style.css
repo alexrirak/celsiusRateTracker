@@ -8,7 +8,7 @@ body {
   margin: auto;
 }
 
-.staging {
+.nonprod {
   background: url(/static/img/staging.png) center no-repeat;
   width: 128px;
   height: 128px;
