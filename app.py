@@ -9,7 +9,7 @@ from db import db_host, db_user, db_password, db_database
 app = Flask(__name__)
 sched = BackgroundScheduler(daemon=True)
 
-CELSIUS_ENVIRONMENT = "staging"
+CELSIUS_ENVIRONMENT = "prod"
 CELSIUS_API_URL = "https://wallet-api.celsius.network/util/interest/rates" if CELSIUS_ENVIRONMENT == "prod" else "https://wallet-api.staging.celsius.network/util/interest/rates"
 # queries defined at the very bottom
 FETCH_COIN_DATA_QUERY = ""
