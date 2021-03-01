@@ -1,67 +1,11 @@
-.comparison {
-  max-width:940px;
-  margin:0 auto;
-  font:13px/1.4 "Helvetica Neue",Helvetica,Arial,sans-serif;
-  text-align:center;
-  padding:10px;
-}
-
-.comparison table {
-  width:100%;
-  border-collapse: collapse;
-  border-spacing: 0;
-  table-layout: fixed;
-  border-bottom:1px solid #CCC;
-}
-
-.comparison td, .comparison th {
-  border-right:1px solid #CCC;
-  empty-cells: show;
-  padding:10px;
-  text-align: center;
-}
-
-.compare-heading {
-  font-size:18px;
-  font-weight:bold !important;
-  border-bottom:0 !important;
-  padding-top:10px !important;
-}
-
-.comparison .compare-row {
-  background:#F5F5F5;
-}
-
-.comparison th {
-  font-weight:normal;
-  padding:0;
-  border-bottom:1px solid #CCC;
-}
-
-.comparison tr td:first-child {
-  text-align:left;
-}
-
-.comparison .tl {
-  color:#FFF;
-  padding:10px;
-  font-size:13px;
-  border-right:1px solid #CCC;
-  border-bottom:0;
-}
-
-.comparison .tl2 {
-  border-right:0;
+body {
+  padding-top: 5rem;
 }
 
 .coinLogo {
-  width: 3em;
-  height: 3em;
+  width: 2em;
+  height: 2em;
   margin: auto;
-}
-
-.blockLabel {
-  font-size: small;
 }
 
 .staging {
@@ -69,6 +13,25 @@
   width: 128px;
   height: 128px;
   position: absolute;
-  top: 0;
+  top: 56px;
   left: 0
+}
+
+#rateTable td {
+  vertical-align: middle;
+}
+
+#disclaimer {
+  font-size: 0.75em;
+  text-align: center;
+}
+
+@media (min-width: 767px) {
+  #rateTable_length label {
+    float: left;
+  }
+
+  #rateTable_info {
+    float: left;
+  }
 }

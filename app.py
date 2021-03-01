@@ -16,6 +16,7 @@ FETCH_COIN_DATA_QUERY = ""
 INSERT_COIN_DATA_QUERY = ""
 GET_LATEST_ROW_BY_COIN_QUERY = ""
 GET_METADATA_BY_COIN_QUERY = ""
+
 INSERT_COIN_METADATA_QUERY = ""
 UPDATE_COIN_METADATA_QUERY = ""
 
@@ -23,7 +24,7 @@ UPDATE_COIN_METADATA_QUERY = ""
 @app.route('/')
 def main():
     interestRates = get_celsius_rates()['interestRates']
-    return render_template('main.html', interestRates=interestRates, env=CELSIUS_ENVIRONMENT)
+    return render_template('main.html', env=CELSIUS_ENVIRONMENT)
 
 
 # Fetches data from the db on all the coins
@@ -54,10 +55,15 @@ def insert_coin_rate(coin, rate):
     mycursor.execute(GET_LATEST_ROW_BY_COIN_QUERY.format(coin))
 
     existing_row = mycursor.fetchone()
-    savedRate = float(existing_row[2])
 
-    # Only save a new row if the rate has changed
-    if savedRate != float(rate):
+    if existing_row is not None:
+        savedRate = float(existing_row[2])
+
+        # Only save a new row if the rate has changed
+        if savedRate != float(rate):
+            mycursor.execute(INSERT_COIN_DATA_QUERY, (coin, rate))
+            mydb.commit()
+    else:
         mycursor.execute(INSERT_COIN_DATA_QUERY, (coin, rate))
         mydb.commit()
 
