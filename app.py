@@ -5,6 +5,7 @@ import mysql.connector
 from apscheduler.schedulers.background import BackgroundScheduler
 import smtplib
 import ssl
+import datetime
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
@@ -117,7 +118,8 @@ def process_coin_rates():
 
     # If there are rates which changed trigger an async email alert
     if len(changed_rates) > 0:
-        sched.add_job(send_out_email_alerts, None, [changed_rates])
+        # sched.add_job(send_out_email_alerts, None, [changed_rates])
+        send_out_email_alerts(changed_rates)
 
     # since this method is http accessible need to ensure we always return a http status code
     return ('Success', 200)
@@ -126,8 +128,7 @@ def process_coin_rates():
 # TODO: remove this method
 @app.route('/triggerEmail')
 def trigger_email():
-    send_out_email_alerts(["BTC", "ETH"])
-    #send_out_email_alerts(["ALX"])
+    send_out_email_alerts(["BTC"])
     return ('Success', 200)
 
 
@@ -140,8 +141,13 @@ def send_out_email_alerts(changed_rates: list[str]):
         return
 
     for sub in subscribers:
-        send_rate_change_notification(sub["email"])
-        # TODO: send the coin data as well
+        subed_coins = sub["coins"].split(",")
+        coinData = {}
+        for coin in subed_coins:
+            coinData[coin] = coin_data.get(coin)
+
+
+        send_rate_change_notification(sub["email"], coinData)
 
 
 def get_subscribed_emails(changed_rates: list[str]):
@@ -168,6 +174,10 @@ def get_coin_change_data(changed_rates: list[str]):
 
     for coin_record in coin_data:
         if coin_record["coin"] in changed_rates:
+            coin_record["latest_rate"] = apr_to_apy(float(coin_record["latest_rate"]))
+            coin_record["prior_rate"] = apr_to_apy(float(coin_record["prior_rate"]))
+            coin_record["rate_diff"] = coin_record["latest_rate"] - coin_record["prior_rate"]
+            coin_record["latest_date"] = datetime.datetime.strptime(coin_record["latest_date"], '%Y-%m-%d %H:%M:%S').date()
             coin_change_data[coin_record["coin"]] = coin_record
 
     return coin_change_data
@@ -181,6 +191,11 @@ def get_celsius_rates():
         return json.loads(response.text)
 
     return None
+
+
+def apr_to_apy(apr: float) -> float:
+    apr = float(apr)
+    return ((1 + (apr / 52)) ** 52) - 1
 
 
 # reads a file in as a string
@@ -221,8 +236,8 @@ def send_email(to_email: str, subject: str, body: str):
 
 
 # Sends an email using the rate change template to the given email
-def send_rate_change_notification(to_email: str):
-    body = render_template('email.html')
+def send_rate_change_notification(to_email: str, coinData):
+    body = render_template('email.html', coinData=coinData)
     send_email(to_email, "Celsius Rate Change", body)
 
 
