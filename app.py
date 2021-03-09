@@ -135,7 +135,7 @@ def trigger_email():
 
 
 # Send out email alerts for the changed rates
-def send_out_email_alerts(changed_rates: list[str]):
+def send_out_email_alerts(changed_rates):
     coin_data = get_coin_change_data(changed_rates)
     subscribers = get_subscribed_emails(changed_rates)
 
@@ -153,7 +153,7 @@ def send_out_email_alerts(changed_rates: list[str]):
 
 
 # Gets the list of subscriber emails given a list of coins which changed
-def get_subscribed_emails(changed_rates: list[str]):
+def get_subscribed_emails(changed_rates):
     mydb = get_db_connection()
 
     mycursor = mydb.cursor()
@@ -171,7 +171,7 @@ def get_subscribed_emails(changed_rates: list[str]):
 
 
 # Based on a list of coins, fetches the relevant change data from the api
-def get_coin_change_data(changed_rates: list[str]):
+def get_coin_change_data(changed_rates):
     coin_data = json.loads(fetch_coin_data())
     coin_change_data = {}
 
