@@ -1,1 +1,1 @@
-Select email, GROUP_CONCAT(coin) AS 'coins' FROM coinalerts WHERE active = 1 AND coin IN ({}) GROUP BY email;
+Select email, GROUP_CONCAT(coin) AS 'coins' FROM coinAlerts WHERE active = 1 AND coin IN ({}) GROUP BY email;
