@@ -23,8 +23,10 @@ GET_LATEST_ROW_BY_COIN_QUERY = ""
 GET_METADATA_BY_COIN_QUERY = ""
 INSERT_COIN_METADATA_QUERY = ""
 UPDATE_COIN_METADATA_QUERY = ""
+GET_SUBSCRIBED_EMAILS = ""
 
 
+# Renders the main view
 @app.route('/')
 def main():
     return render_template('main.html', env=CELSIUS_ENVIRONMENT)
@@ -150,6 +152,7 @@ def send_out_email_alerts(changed_rates: list[str]):
         send_rate_change_notification(sub["email"], coinData)
 
 
+# Gets the list of subscriber emails given a list of coins which changed
 def get_subscribed_emails(changed_rates: list[str]):
     mydb = get_db_connection()
 
@@ -193,6 +196,7 @@ def get_celsius_rates():
     return None
 
 
+# Converts APR to APY with ((1+(B4/52))^(52))-1
 def apr_to_apy(apr: float) -> float:
     apr = float(apr)
     return ((1 + (apr / 52)) ** 52) - 1
