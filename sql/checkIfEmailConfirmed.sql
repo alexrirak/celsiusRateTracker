@@ -1,0 +1,1 @@
+SELECT MIN(active) FROM coinAlerts WHERE email = "%s"

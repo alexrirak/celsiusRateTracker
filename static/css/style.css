@@ -8,6 +8,16 @@ body {
   margin: auto;
 }
 
+.coinLogo small {
+  width: 1.5em;
+  height: 1.5em;
+}
+
+.grayOut {
+    opacity: 0.4;
+    filter: alpha(opacity=40); /* msie */
+}
+
 .nonprod {
   background: url(/static/img/staging.png) center no-repeat;
   width: 128px;

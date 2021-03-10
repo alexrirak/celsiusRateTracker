@@ -1,4 +1,4 @@
-from flask import Flask, render_template
+from flask import Flask, render_template, request, abort
 import requests
 import json
 import mysql.connector
@@ -14,7 +14,7 @@ from db import db_host, db_user, db_password, db_database, email_username, email
 app = Flask(__name__)
 sched = BackgroundScheduler(daemon=True)
 
-CELSIUS_ENVIRONMENT = "prod"
+CELSIUS_ENVIRONMENT = "staging"
 CELSIUS_API_URL = "https://wallet-api.celsius.network/util/interest/rates" if CELSIUS_ENVIRONMENT == "prod" else "https://wallet-api.staging.celsius.network/util/interest/rates"
 # queries defined at the very bottom
 FETCH_COIN_DATA_QUERY = ""
@@ -24,12 +24,16 @@ GET_METADATA_BY_COIN_QUERY = ""
 INSERT_COIN_METADATA_QUERY = ""
 UPDATE_COIN_METADATA_QUERY = ""
 GET_SUBSCRIBED_EMAILS = ""
+GET_COIN_LIST = ""
+INSERT_EMAIL_ALERT = ""
+CHECK_EMAIL_CONFIRMED = ""
+CHECK_SUBSCRIPTION_EXISTS = ""
 
 
 # Renders the main view
 @app.route('/')
 def main():
-    return render_template('main.html', env=CELSIUS_ENVIRONMENT)
+    return render_template('main.html', env=CELSIUS_ENVIRONMENT, coinList=get_coin_list())
 
 
 # Fetches data from the db on all the coins
@@ -103,6 +107,9 @@ def update_coin_metadata(name, symbol, image_url):
         if existing_row[1] != name or existing_row[2] != symbol or existing_row[3] != image_url:
             mycursor.execute(UPDATE_COIN_METADATA_QUERY.format(name, symbol, image_url, existing_row[0]))
 
+    mycursor.close()
+    mydb.close()
+
 
 # Refreshes coin data in our DB based on the celsius api
 @app.route('/refreshCoinData')
@@ -132,6 +139,78 @@ def process_coin_rates():
 def trigger_email():
     send_out_email_alerts(["BTC"])
     return ('Success', 200)
+
+
+# Given an email and list of coins subscribes for alerts
+@app.route('/registerEmail', methods=['POST'])
+def register_email():
+    if not request.json or not 'email' in request.json or not 'coins' in request.json:
+        abort(400)
+    else:
+        # Checks if this email has already been confirmed
+        emailConfirmed = is_email_confirmed(request.json["email"])
+        for coin in request.json["coins"]:
+            # Dont duplicate if subscription already exists
+            if does_subscription_exist(request.json["email"], coin):
+                continue
+            insert_email_into_db(request.json["email"], coin, emailConfirmed)
+
+        if(emailConfirmed):
+            print("trigger conf email") #TODO
+
+    return ('Success', 201)
+
+
+# Checks if this email has already been confirmed
+def is_email_confirmed(email: str):
+    mydb = get_db_connection()
+
+    mycursor = mydb.cursor()
+    mycursor.execute(CHECK_EMAIL_CONFIRMED % email)
+
+    existing_row = mycursor.fetchone()
+
+    exists = False
+
+    if existing_row[0] is not None and int(existing_row[0]) == 1:
+        exists = True
+
+    mycursor.close()
+    mydb.close()
+
+    return exists
+
+
+# Checks if this subscription already exists
+def does_subscription_exist(email: str, coin: str):
+    mydb = get_db_connection()
+
+    mycursor = mydb.cursor()
+    mycursor.execute(CHECK_SUBSCRIPTION_EXISTS % (email, coin))
+
+    existing_row = mycursor.fetchone()
+
+    exists = False
+
+    if existing_row is not None:
+        exists = True
+
+    mycursor.close()
+    mydb.close()
+
+    return exists
+
+
+# Inserts given email and con into the database for alerts
+def insert_email_into_db(email: str, coin: str, confirmed=False):
+    mydb = get_db_connection()
+
+    mycursor = mydb.cursor()
+    mycursor.execute(INSERT_EMAIL_ALERT, (coin, email, 1 if confirmed else 0))
+    mydb.commit()
+
+    mycursor.close()
+    mydb.close()
 
 
 # Send out email alerts for the changed rates
@@ -219,6 +298,23 @@ def get_db_connection():
         database=db_database
     )
 
+# Returns the list of coins in the DB
+def get_coin_list():
+    mydb = get_db_connection()
+
+    mycursor = mydb.cursor()
+
+    # format the list as string but strip the brackets
+    mycursor.execute(GET_COIN_LIST)
+
+    # this maps the column names onto the result set so that there is no guessing
+    columns = mycursor.description
+    result = [{columns[index][0]: column for index, column in enumerate(value)} for value in mycursor.fetchall()]
+
+    mydb.close()
+
+    return result
+
 
 # sends an email to the specified email with the given subject and body
 def send_email(to_email: str, subject: str, body: str):
@@ -256,6 +352,10 @@ GET_METADATA_BY_COIN_QUERY = get_string_from_file('sql/getMetadataByCoin.sql')
 INSERT_COIN_METADATA_QUERY = get_string_from_file('sql/insertCoinMetadata.sql')
 UPDATE_COIN_METADATA_QUERY = get_string_from_file('sql/updateCoinMetadata.sql')
 GET_SUBSCRIBED_EMAILS = get_string_from_file('sql/getSubscribedEmails.sql')
+GET_COIN_LIST = get_string_from_file('sql/getCoinList.sql')
+INSERT_EMAIL_ALERT = get_string_from_file('sql/insertEmailAlert.sql')
+CHECK_EMAIL_CONFIRMED = get_string_from_file('sql/checkIfEmailConfirmed.sql')
+CHECK_SUBSCRIPTION_EXISTS = get_string_from_file('sql/checkIfSubscriptionExists.sql')
 
 # Start the scheduler
 sched.start()
