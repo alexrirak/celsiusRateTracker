@@ -1,0 +1,1 @@
+SELECT * FROM coinMetaData GROUP BY symbol

@@ -1,0 +1,18 @@
+{% extends "template.html" %}
+{% block content %}
+    <div class="text-center">
+        <h1>Confirm Your Email</h1>
+        {% if success %}
+        <div class="alert alert-success" role="alert" id="signupSuccess">
+            <h4 class="alert-heading"><i class="bi bi-check-square"></i> Your email has been verified!</h4>
+            <p><a href="http://celsiustracker.com" >Click here to go back to the main page</a></p>
+        </div>
+        {% else %}
+        <div class="alert alert-danger" role="alert" id="signupFailure">
+            <h4 class="alert-heading"><i class="bi bi-x-square"></i> Oops! Something went wrong!</h4>
+            <p>Please confirm you entered the correct URL or try again later. If this problem persist please contact us.</p>
+            <p><a href="http://celsiustracker.com" >Click here to go back to the main page</a></p>
+        </div>
+        {% endif %}
+    </div>
+{% endblock %}

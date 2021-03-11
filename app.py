@@ -1,4 +1,4 @@
-from flask import Flask, render_template
+from flask import Flask, render_template, request, abort
 import requests
 import json
 import mysql.connector
@@ -6,6 +6,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 import smtplib
 import ssl
 import datetime
+import uuid
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
@@ -24,12 +25,16 @@ GET_METADATA_BY_COIN_QUERY = ""
 INSERT_COIN_METADATA_QUERY = ""
 UPDATE_COIN_METADATA_QUERY = ""
 GET_SUBSCRIBED_EMAILS = ""
+GET_COIN_LIST = ""
+INSERT_EMAIL_ALERT = ""
+CHECK_EMAIL_CONFIRMED = ""
+CHECK_SUBSCRIPTION_EXISTS = ""
 
 
 # Renders the main view
 @app.route('/')
 def main():
-    return render_template('main.html', env=CELSIUS_ENVIRONMENT)
+    return render_template('main.html', env=CELSIUS_ENVIRONMENT, coinList=get_coin_list())
 
 
 # Fetches data from the db on all the coins
@@ -103,6 +108,9 @@ def update_coin_metadata(name, symbol, image_url):
         if existing_row[1] != name or existing_row[2] != symbol or existing_row[3] != image_url:
             mycursor.execute(UPDATE_COIN_METADATA_QUERY.format(name, symbol, image_url, existing_row[0]))
 
+    mycursor.close()
+    mydb.close()
+
 
 # Refreshes coin data in our DB based on the celsius api
 @app.route('/refreshCoinData')
@@ -132,6 +140,98 @@ def process_coin_rates():
 def trigger_email():
     send_out_email_alerts(["BTC"])
     return ('Success', 200)
+
+
+# Given an email and list of coins subscribes for alerts
+@app.route('/registerEmail', methods=['POST'])
+def register_email():
+    if not request.json or not 'email' in request.json or not 'coins' in request.json:
+        abort(400)
+    else:
+        # Checks if this email has already been confirmed
+        emailConfirmed = is_email_confirmed(request.json["email"])
+        confirmId = str(uuid.uuid4())
+        for coin in request.json["coins"]:
+            # Dont duplicate if subscription already exists
+            if does_subscription_exist(request.json["email"], coin):
+                continue
+            insert_email_into_db(request.json["email"], coin, emailConfirmed, confirmId)
+
+        if(not emailConfirmed):
+            send_email_confirmation_request(request.json["email"], confirmId)
+
+    return ('Success', 201)
+
+
+# Marks an email as confirmed in the database so that it starts receiving alerts
+@app.route('/confirmEmail/<string:confirmation_id>')
+def confirm_email(confirmation_id: str):
+    mydb = get_db_connection()
+
+    mycursor = mydb.cursor()
+
+    result_args = mycursor.callproc('sp_ConfirmEmail',[confirmation_id, 0])
+    mydb.commit()
+
+    mycursor.close()
+    mydb.close()
+
+    return render_template('confirmed.html',
+                           env=CELSIUS_ENVIRONMENT,
+                           success=True if int(result_args[1]) == 1 else False)
+
+
+
+# Checks if this email has already been confirmed
+def is_email_confirmed(email: str):
+    mydb = get_db_connection()
+
+    mycursor = mydb.cursor()
+    mycursor.execute(CHECK_EMAIL_CONFIRMED % email)
+
+    existing_row = mycursor.fetchone()
+
+    exists = False
+
+    if existing_row[0] is not None and int(existing_row[0]) == 1:
+        exists = True
+
+    mycursor.close()
+    mydb.close()
+
+    return exists
+
+
+# Checks if this subscription already exists
+def does_subscription_exist(email: str, coin: str):
+    mydb = get_db_connection()
+
+    mycursor = mydb.cursor()
+    mycursor.execute(CHECK_SUBSCRIPTION_EXISTS % (email, coin))
+
+    existing_row = mycursor.fetchone()
+
+    exists = False
+
+    if existing_row is not None:
+        exists = True
+
+    mycursor.close()
+    mydb.close()
+
+    return exists
+
+
+# Inserts given email and coin into the database for alerts
+def insert_email_into_db(email: str, coin: str, confirmed=False, confirmId=None):
+    mydb = get_db_connection()
+
+    mycursor = mydb.cursor()
+    mycursor.execute(INSERT_EMAIL_ALERT, (coin, email, 1 if confirmed else 0, confirmId))
+    mydb.commit()
+
+    mycursor.close()
+    mydb.close()
 
 
 # Send out email alerts for the changed rates
@@ -219,6 +319,22 @@ def get_db_connection():
         database=db_database
     )
 
+# Returns the list of coins in the DB
+def get_coin_list():
+    mydb = get_db_connection()
+
+    mycursor = mydb.cursor()
+
+    mycursor.execute(GET_COIN_LIST)
+
+    # this maps the column names onto the result set so that there is no guessing
+    columns = mycursor.description
+    result = [{columns[index][0]: column for index, column in enumerate(value)} for value in mycursor.fetchall()]
+
+    mydb.close()
+
+    return result
+
 
 # sends an email to the specified email with the given subject and body
 def send_email(to_email: str, subject: str, body: str):
@@ -239,10 +355,16 @@ def send_email(to_email: str, subject: str, body: str):
         )
 
 
+# Sends an email using the email confirmation template to the given email
+def send_email_confirmation_request(to_email: str, confirm_id: str):
+    body = render_template('emailConfirmation.html', confirmId=confirm_id)
+    send_email(to_email, "[Celsius Tracker] Please confirm your email address", body)
+
+
 # Sends an email using the rate change template to the given email
 def send_rate_change_notification(to_email: str, coinData):
-    body = render_template('email.html', coinData=coinData)
-    send_email(to_email, "Celsius Rate Change", body)
+    body = render_template('emailAlert.html', coinData=coinData)
+    send_email(to_email, "[Celsius Tracker] Celsius Rate Change", body)
 
 
 if __name__ == '__main__':
@@ -256,6 +378,10 @@ GET_METADATA_BY_COIN_QUERY = get_string_from_file('sql/getMetadataByCoin.sql')
 INSERT_COIN_METADATA_QUERY = get_string_from_file('sql/insertCoinMetadata.sql')
 UPDATE_COIN_METADATA_QUERY = get_string_from_file('sql/updateCoinMetadata.sql')
 GET_SUBSCRIBED_EMAILS = get_string_from_file('sql/getSubscribedEmails.sql')
+GET_COIN_LIST = get_string_from_file('sql/getCoinList.sql')
+INSERT_EMAIL_ALERT = get_string_from_file('sql/insertEmailAlert.sql')
+CHECK_EMAIL_CONFIRMED = get_string_from_file('sql/checkIfEmailConfirmed.sql')
+CHECK_SUBSCRIPTION_EXISTS = get_string_from_file('sql/checkIfSubscriptionExists.sql')
 
 # Start the scheduler
 sched.start()
