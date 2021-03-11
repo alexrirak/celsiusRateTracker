@@ -1,3 +1,5 @@
+import sys
+
 from flask import Flask, render_template, request, abort
 import requests
 import json
@@ -7,16 +9,24 @@ import smtplib
 import ssl
 import datetime
 import uuid
+import os
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-
-from db import db_host, db_user, db_password, db_database, email_username, email_smtp_server, email_password
+from dotenv import load_dotenv
 
 app = Flask(__name__)
 sched = BackgroundScheduler(daemon=True)
 
-CELSIUS_ENVIRONMENT = "prod"
+CELSIUS_ENVIRONMENT = os.getenv("CELSIUS_ENVIRONMENT", "staging")
 CELSIUS_API_URL = "https://wallet-api.celsius.network/util/interest/rates" if CELSIUS_ENVIRONMENT == "prod" else "https://wallet-api.staging.celsius.network/util/interest/rates"
+DATABASE_HOST = os.getenv("DATABASE_HOST")
+DATABASE_USER = os.getenv("DATABASE_USER")
+DATABASE_PASS = os.getenv("DATABASE_PASS")
+DATABASE_SCHM = os.getenv("DATABASE_SCHM")
+EMAIL_USER = os.getenv("EMAIL_USER")
+EMAIL_PASS = os.getenv("EMAIL_PASS")
+EMAIL_SERVER = os.getenv("EMAIL_SERVER")
+BASE_HOST = os.getenv("BASE_HOST", "https://celsiustracker.com")
 # queries defined at the very bottom
 FETCH_COIN_DATA_QUERY = ""
 INSERT_COIN_DATA_QUERY = ""
@@ -34,7 +44,7 @@ CHECK_SUBSCRIPTION_EXISTS = ""
 # Renders the main view
 @app.route('/')
 def main():
-    return render_template('main.html', env=CELSIUS_ENVIRONMENT, coinList=get_coin_list())
+    return render_template('main.html', env=CELSIUS_ENVIRONMENT, coinList=get_coin_list(), BASE_HOST=BASE_HOST)
 
 
 # Fetches data from the db on all the coins
@@ -155,7 +165,7 @@ def register_email():
             # Dont duplicate if subscription already exists
             if does_subscription_exist(request.json["email"], coin):
                 continue
-            insert_email_into_db(request.json["email"], coin, emailConfirmed, confirmId)
+            insert_email_into_db(request.json["email"], coin, emailConfirmed, confirmId if not emailConfirmed else None)
 
         if(not emailConfirmed):
             send_email_confirmation_request(request.json["email"], confirmId)
@@ -178,7 +188,8 @@ def confirm_email(confirmation_id: str):
 
     return render_template('confirmed.html',
                            env=CELSIUS_ENVIRONMENT,
-                           success=True if int(result_args[1]) == 1 else False)
+                           success=True if int(result_args[1]) == 1 else False,
+                           BASE_HOST=BASE_HOST)
 
 
 
@@ -313,10 +324,10 @@ def get_string_from_file(file_path):
 # returns a connection to the DB
 def get_db_connection():
     return mysql.connector.connect(
-        host=db_host,
-        user=db_user,
-        password=db_password,
-        database=db_database
+        host=DATABASE_HOST,
+        user=DATABASE_USER,
+        password=DATABASE_PASS,
+        database=DATABASE_SCHM
     )
 
 # Returns the list of coins in the DB
@@ -341,29 +352,29 @@ def send_email(to_email: str, subject: str, body: str):
 
     message = MIMEMultipart("alternative")
     message["Subject"] = subject
-    message["From"] = email_username
+    message["From"] = "Celsius Tracker <{}>".format(EMAIL_USER)
     message["To"] = to_email
 
     message.attach(MIMEText(body, "html"))
 
     # Create secure connection with server and send email
     context = ssl.create_default_context()
-    with smtplib.SMTP_SSL(email_smtp_server, 465, context=context) as server:
-        server.login(email_username, email_password)
+    with smtplib.SMTP_SSL(EMAIL_SERVER, 465, context=context) as server:
+        server.login(EMAIL_USER, EMAIL_PASS)
         server.sendmail(
-            email_username, to_email, message.as_string()
+            EMAIL_USER, to_email, message.as_string()
         )
 
 
 # Sends an email using the email confirmation template to the given email
 def send_email_confirmation_request(to_email: str, confirm_id: str):
-    body = render_template('emailConfirmation.html', confirmId=confirm_id)
+    body = render_template('emailConfirmation.html', confirmId=confirm_id, BASE_HOST=BASE_HOST)
     send_email(to_email, "[Celsius Tracker] Please confirm your email address", body)
 
 
 # Sends an email using the rate change template to the given email
 def send_rate_change_notification(to_email: str, coinData):
-    body = render_template('emailAlert.html', coinData=coinData)
+    body = render_template('emailAlert.html', coinData=coinData, BASE_HOST=BASE_HOST)
     send_email(to_email, "[Celsius Tracker] Celsius Rate Change", body)
 
 
@@ -385,4 +396,16 @@ CHECK_SUBSCRIPTION_EXISTS = get_string_from_file('sql/checkIfSubscriptionExists.
 
 # Start the scheduler
 sched.start()
+
+# Load env vars
+load_dotenv()
+if DATABASE_HOST is None or \
+        DATABASE_USER is None or \
+        DATABASE_PASS is None or \
+        DATABASE_SCHM is None or \
+        EMAIL_USER is None or \
+        EMAIL_PASS is None or \
+        EMAIL_SERVER is None:
+    print("*** Missing environment variables ***")
+    sys.exit()
 
