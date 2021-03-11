@@ -15,7 +15,7 @@ from db import db_host, db_user, db_password, db_database, email_username, email
 app = Flask(__name__)
 sched = BackgroundScheduler(daemon=True)
 
-CELSIUS_ENVIRONMENT = "staging"
+CELSIUS_ENVIRONMENT = "prod"
 CELSIUS_API_URL = "https://wallet-api.celsius.network/util/interest/rates" if CELSIUS_ENVIRONMENT == "prod" else "https://wallet-api.staging.celsius.network/util/interest/rates"
 # queries defined at the very bottom
 FETCH_COIN_DATA_QUERY = ""
@@ -163,6 +163,7 @@ def register_email():
     return ('Success', 201)
 
 
+# Marks an email as confirmed in the database so that it starts receiving alerts
 @app.route('/confirmEmail/<string:confirmation_id>')
 def confirm_email(confirmation_id: str):
     mydb = get_db_connection()
@@ -221,7 +222,7 @@ def does_subscription_exist(email: str, coin: str):
     return exists
 
 
-# Inserts given email and con into the database for alerts
+# Inserts given email and coin into the database for alerts
 def insert_email_into_db(email: str, coin: str, confirmed=False, confirmId=None):
     mydb = get_db_connection()
 
@@ -324,7 +325,6 @@ def get_coin_list():
 
     mycursor = mydb.cursor()
 
-    # format the list as string but strip the brackets
     mycursor.execute(GET_COIN_LIST)
 
     # this maps the column names onto the result set so that there is no guessing
