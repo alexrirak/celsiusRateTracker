@@ -1,2 +1,2 @@
-INSERT INTO coinAlerts (coin, email, active)
-VALUES(%s,%s,%s)
+INSERT INTO coinAlerts (coin, email, active, confirmId)
+VALUES(%s,%s,%s, %s)

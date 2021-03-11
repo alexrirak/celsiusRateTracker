@@ -6,6 +6,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 import smtplib
 import ssl
 import datetime
+import uuid
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
@@ -149,16 +150,35 @@ def register_email():
     else:
         # Checks if this email has already been confirmed
         emailConfirmed = is_email_confirmed(request.json["email"])
+        confirmId = str(uuid.uuid4())
         for coin in request.json["coins"]:
             # Dont duplicate if subscription already exists
             if does_subscription_exist(request.json["email"], coin):
                 continue
-            insert_email_into_db(request.json["email"], coin, emailConfirmed)
+            insert_email_into_db(request.json["email"], coin, emailConfirmed, confirmId)
 
-        if(emailConfirmed):
-            print("trigger conf email") #TODO
+        if(not emailConfirmed):
+            send_email_confirmation_request(request.json["email"], confirmId)
 
     return ('Success', 201)
+
+
+@app.route('/confirmEmail/<string:confirmation_id>')
+def confirm_email(confirmation_id: str):
+    mydb = get_db_connection()
+
+    mycursor = mydb.cursor()
+
+    result_args = mycursor.callproc('sp_ConfirmEmail',[confirmation_id, 0])
+    mydb.commit()
+
+    mycursor.close()
+    mydb.close()
+
+    return render_template('confirmed.html',
+                           env=CELSIUS_ENVIRONMENT,
+                           success=True if int(result_args[1]) == 1 else False)
+
 
 
 # Checks if this email has already been confirmed
@@ -202,11 +222,11 @@ def does_subscription_exist(email: str, coin: str):
 
 
 # Inserts given email and con into the database for alerts
-def insert_email_into_db(email: str, coin: str, confirmed=False):
+def insert_email_into_db(email: str, coin: str, confirmed=False, confirmId=None):
     mydb = get_db_connection()
 
     mycursor = mydb.cursor()
-    mycursor.execute(INSERT_EMAIL_ALERT, (coin, email, 1 if confirmed else 0))
+    mycursor.execute(INSERT_EMAIL_ALERT, (coin, email, 1 if confirmed else 0, confirmId))
     mydb.commit()
 
     mycursor.close()
@@ -335,10 +355,16 @@ def send_email(to_email: str, subject: str, body: str):
         )
 
 
+# Sends an email using the email confirmation template to the given email
+def send_email_confirmation_request(to_email: str, confirm_id: str):
+    body = render_template('emailConfirmation.html', confirmId=confirm_id)
+    send_email(to_email, "[Celsius Tracker] Please confirm your email address", body)
+
+
 # Sends an email using the rate change template to the given email
 def send_rate_change_notification(to_email: str, coinData):
-    body = render_template('email.html', coinData=coinData)
-    send_email(to_email, "Celsius Rate Change", body)
+    body = render_template('emailAlert.html', coinData=coinData)
+    send_email(to_email, "[Celsius Tracker] Celsius Rate Change", body)
 
 
 if __name__ == '__main__':
