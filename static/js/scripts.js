@@ -94,17 +94,16 @@ $(document).ready(function() {
         }).fail(function() {
             $("#signupFailure").show();
             $("#signupFailure").delay(10000).fadeOut();
+        }).finally(function() {
+            $(".form-check-input").each(function(){
+                $( this ).prop('checked', false);
+                className = "#img-" + $( this )[0].id;
+                $(className).parent().addClass("grayOut");
+            })
+            $("#signupEmail").val("");
+            enableButtons();
+            bootstrap.Modal.getInstance(document.getElementById('signUpModal')).hide();
         });
-
-
-        $(".form-check-input").each(function(){
-            $( this ).prop('checked', false);
-            className = "#img-" + $( this )[0].id;
-            $(className).parent().addClass("grayOut");
-        })
-        $("#signupEmail").val("");
-        enableButtons();
-        bootstrap.Modal.getInstance(document.getElementById('signUpModal')).hide();
     })
 
     var exampleModal = document.getElementById('signUpModal');

@@ -66,7 +66,7 @@
                                 <tr>
                                     <td style="color: #153643; font-family: Arial, sans-serif; font-size: 16px; line-height: 24px; padding: 20px 0 30px 0;">
                                         <p style="margin: 0px 0px 20px;">Thanks for signing up for alerts on Celsius Tracker. To finish registration, please click the button below to verify your email.</p>
-                                        <a href="http://CelsiusTracker.com/confirmEmail/{{ confirmId|urlencode }}">
+                                        <a href="{{ BASE_HOST }}/confirmEmail/{{ confirmId|urlencode }}">
                                             <button type="button" class="btn btn-primary">Confirm Email</button>
                                         </a>
                                         <p>- Celsius Tracker Team</p>
@@ -80,7 +80,7 @@
                             <table border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse;">
                                 <tr>
                                     <td style="color: #ffffff; font-family: Arial, sans-serif; font-size: 14px;">
-                                        Visit <a href="http://CelsiusTracker.com" style="color: #ffffff;">CelsiusTracker.com</a> for more information. <br/>This website is not affiliated with Celsius Network.
+                                        Visit <a href="{{ BASE_HOST }}" style="color: #ffffff;">{{ BASE_HOST }}</a> for more information. <br/>This website is not affiliated with Celsius Network.
                                     </td>
                                 </tr>
                             </table>
