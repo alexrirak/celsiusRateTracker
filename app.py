@@ -188,7 +188,7 @@ def confirm_email(confirmation_id: str):
                            BASE_HOST=BASE_HOST)
 
 
-# Displays the unsubscribe page given and email id string
+# Displays the unsubscribe page given an email id string
 # email id is just the person's email in hex encoded form
 @app.route('/unsubscribe/<string:email_id>')
 def unsubscribe_email_page(email_id: str):
@@ -207,8 +207,6 @@ def unsubscribe_email_page(email_id: str):
     mycursor.close()
     mydb.close()
 
-    print(subscribed_coins)
-
     return render_template('unsubscribe.html',
                            env=ENVIRONMENT,
                            email=email,
@@ -222,6 +220,8 @@ def unsubscribe_email(email_id: str):
     email = binascii.unhexlify(email_id.encode()).decode()
     #TODO: Call store proc
     print("")
+
+    return ('Not Implemented', 200)
 
 
 # Checks if this email has already been confirmed
