@@ -11,8 +11,8 @@
     </head>
 
     <body>
-        {% if 'prod' != env %}
-            <div class="nonprod"></div>
+        {% if 'PROD' != env|upper %}
+            <div class="corner-ribbon top-left sticky orange shadow" style="top: 81px;">{{ env|upper }}</div>
         {% endif %}
         <nav class="navbar navbar-expand-md navbar-dark bg-dark fixed-top">
             <div class="container-fluid">

@@ -94,7 +94,7 @@ $(document).ready(function() {
         }).fail(function() {
             $("#signupFailure").show();
             $("#signupFailure").delay(10000).fadeOut();
-        }).finally(function() {
+        }).always(function() {
             $(".form-check-input").each(function(){
                 $( this ).prop('checked', false);
                 className = "#img-" + $( this )[0].id;
