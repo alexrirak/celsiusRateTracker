@@ -17,8 +17,8 @@ from dotenv import load_dotenv
 app = Flask(__name__)
 sched = BackgroundScheduler(daemon=True)
 
-CELSIUS_ENVIRONMENT = os.getenv("CELSIUS_ENVIRONMENT", "staging")
-CELSIUS_API_URL = "https://wallet-api.celsius.network/util/interest/rates" if CELSIUS_ENVIRONMENT == "prod" else "https://wallet-api.staging.celsius.network/util/interest/rates"
+ENVIRONMENT = os.getenv("ENVIRONMENT", "staging")
+CELSIUS_API_URL = "https://wallet-api.celsius.network/util/interest/rates" if ENVIRONMENT.upper() == "PROD" else "https://wallet-api.staging.celsius.network/util/interest/rates"
 DATABASE_HOST = os.getenv("DATABASE_HOST")
 DATABASE_USER = os.getenv("DATABASE_USER")
 DATABASE_PASS = os.getenv("DATABASE_PASS")
@@ -44,7 +44,7 @@ CHECK_SUBSCRIPTION_EXISTS = ""
 # Renders the main view
 @app.route('/')
 def main():
-    return render_template('main.html', env=CELSIUS_ENVIRONMENT, coinList=get_coin_list(), BASE_HOST=BASE_HOST)
+    return render_template('main.html', env=ENVIRONMENT, coinList=get_coin_list(), BASE_HOST=BASE_HOST)
 
 
 # Fetches data from the db on all the coins
@@ -187,7 +187,7 @@ def confirm_email(confirmation_id: str):
     mydb.close()
 
     return render_template('confirmed.html',
-                           env=CELSIUS_ENVIRONMENT,
+                           env=ENVIRONMENT,
                            success=True if int(result_args[1]) == 1 else False,
                            BASE_HOST=BASE_HOST)
 
@@ -352,7 +352,8 @@ def send_email(to_email: str, subject: str, body: str):
 
     message = MIMEMultipart("alternative")
     message["Subject"] = subject
-    message["From"] = "Celsius Tracker <{}>".format(EMAIL_USER)
+    message["From"] = "Celsius Tracker {}<{}>".format("" if ENVIRONMENT.upper() == "PROD" else ENVIRONMENT.upper(),
+                                                      EMAIL_USER)
     message["To"] = to_email
 
     message.attach(MIMEText(body, "html"))
