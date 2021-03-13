@@ -56,10 +56,12 @@ $(document).ready(function() {
         $( "[data-bs-dismiss='modal']" ).prop("disabled",true);
         $("#signupEmailAlert").hide();
         $("#signupCoinAlert").hide();
+        $("#dots").show();
 
         enableButtons = function() {
             $( "[data-bs-dismiss='modal']" ).prop("disabled",false);
             $("#signUpModalSubmit")[0].innerHTML = "Submit";
+            $("#dots").hide();
         }
 
         email = $("#signupEmail").val()
@@ -106,13 +108,28 @@ $(document).ready(function() {
         });
     })
 
-    var exampleModal = document.getElementById('signUpModal');
-    exampleModal.addEventListener('show.bs.modal', function (event) {
+    var signupModal = document.getElementById('signUpModal');
+    signupModal.addEventListener('show.bs.modal', function (event) {
 
       var coin = "#" + event.relatedTarget.getAttribute('data-bs-coin');
 
-      $(coin).trigger('click');
+      if (!$(coin).is(":checked")) {
+          $(coin).trigger('click');
+      }
     })
+
+    $("[data-coin]").click(function(){
+        var coin = "#" + $( this )[0].getAttribute('data-coin');
+        $(coin).trigger('click');
+    });
+
+    $('#signUpModal').keypress(function (e) {
+     var key = e.which;
+     if(key == 13)  // the enter key code
+      {
+        $("#signUpModalSubmit").click();
+      }
+    });
 } );
 
 /**

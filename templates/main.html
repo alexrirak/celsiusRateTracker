@@ -1,4 +1,9 @@
 {% extends "template.html" %}
+
+{% block scripts %}
+    <script type="text/javascript" src="/static/js/scripts.js"></script>
+{% endblock %}
+
 {% block content %}
     <div class="text-center">
         <h1>Celsius APY Tracker</h1>
@@ -31,8 +36,8 @@
     </div>
 
     <!-- Signup Modal -->
-    <div class="modal fade" id="signUpModal" data-bs-backdrop="static" tabindex="-1" aria-labelledby="signUpModalLabel" aria-hidden="true">
-      <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal fade" id="signUpModal" tabindex="-1" aria-labelledby="signUpModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
         <div class="modal-content">
           <div class="modal-header">
             <h5 class="modal-title" id="signUpModalLabel">Sign up for alerts</h5>
@@ -40,6 +45,12 @@
           </div>
           <div class="modal-body">
               <h6 style="padding-bottom: .4em;">Sign up to get automated notifications of rate changes.</h6>
+                <div id="dots" style="display:none;">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
               <div class="alert alert-danger" role="alert" id="signupEmailAlert" style="display: none;">
                 Please enter a valid email!
               </div>
@@ -54,7 +65,7 @@
               {%  for coin in  coinList%}
                   {% if loop.index % 2 != 0 %}
                       <div class="row">
-                        <div class="col grayOut" style="text-align: right;">
+                        <div class="col grayOut" style="text-align: right;" data-coin="{{ coin.symbol }}">
                           {{ coin.symbol }} <img class="coinLogo small" src="{{ coin.image }}" alt="{{ coin.name }}" id="img-{{ coin.symbol }}">
                         </div>
                         <div class="col-1">
@@ -69,7 +80,7 @@
                             <input class="form-check-input" type="checkbox" id="{{ coin.symbol }}">
                           </div>
                         </div>
-                        <div class="col grayOut" style="margin-left: 0.5em;">
+                        <div class="col grayOut" style="margin-left: 0.5em;" data-coin="{{ coin.symbol }}">
                             <img class="coinLogo small" src="{{ coin.image }}" alt="{{ coin.name }}" id="img-{{ coin.symbol }}"> {{ coin.symbol }}
                         </div>
 
