@@ -30,11 +30,6 @@
         </table>
     </div>
 
-    <div class="alert alert-light" id="disclaimer">
-        <sup>*</sup>Historical Data available as of March 1st, 2021. <br />
-        Rate data from Celsius Developer API. This website is not affiliated with Celsius Network. All logos property of their respective owners.
-    </div>
-
     <!-- Signup Modal -->
     <div class="modal fade" id="signUpModal" tabindex="-1" aria-labelledby="signUpModalLabel" aria-hidden="true">
       <div class="modal-dialog">
@@ -100,4 +95,9 @@
         </div>
       </div>
     </div>
+{% endblock %}
+
+{% block disclaimer %}
+    <sup>*</sup>Historical Data available as of March 1st, 2021. <br />
+    Rate data from Celsius Developer API. This website is not affiliated with Celsius Network. All logos property of their respective owners.
 {% endblock %}
