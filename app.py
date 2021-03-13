@@ -11,6 +11,7 @@ import datetime
 import uuid
 import os
 import binascii
+import urllib.parse
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from dotenv import load_dotenv
@@ -176,6 +177,9 @@ def confirm_email(confirmation_id: str):
 
     mycursor = mydb.cursor()
 
+    # this should make no difference if its the id we expect but it will hopefully prevent malicious input
+    confirmation_id = urllib.parse.quote_plus(confirmation_id)
+
     result_args = mycursor.callproc('sp_ConfirmEmail',[confirmation_id, 0])
     mydb.commit()
 
@@ -210,18 +214,28 @@ def unsubscribe_email_page(email_id: str):
     return render_template('unsubscribe.html',
                            env=ENVIRONMENT,
                            email=email,
+                           email_id=email_id,
                            BASE_HOST=BASE_HOST,
                            subscribed_coins=subscribed_coins,
                            sub_error=True if len(subscribed_coins) == 0 else False)
 
 
+# Calls a store proc to unsubscribe (delete) given email from the DB
 @app.route('/unsubscribe/<string:email_id>', methods=['DELETE'])
 def unsubscribe_email(email_id: str):
     email = binascii.unhexlify(email_id.encode()).decode()
-    #TODO: Call store proc
-    print("")
 
-    return ('Not Implemented', 200)
+    mydb = get_db_connection()
+
+    mycursor = mydb.cursor()
+
+    mycursor.callproc('sp_Unsubscribe', [email])
+    mydb.commit()
+
+    mycursor.close()
+    mydb.close()
+
+    return ('Success', 200)
 
 
 # Checks if this email has already been confirmed
