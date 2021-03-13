@@ -192,6 +192,14 @@ def confirm_email(confirmation_id: str):
                            BASE_HOST=BASE_HOST)
 
 
+# Displays the unsubscribe landing page
+# For users not coming from an email it encodes he email
+@app.route('/unsubscribe/')
+def unsubscribe_landing_page():
+    #TODO: write the landing page
+    return ('Success', 200)
+
+
 # Displays the unsubscribe page given an email id string
 # email id is just the person's email in hex encoded form
 @app.route('/unsubscribe/<string:email_id>')
@@ -236,6 +244,13 @@ def unsubscribe_email(email_id: str):
     mydb.close()
 
     return ('Success', 200)
+
+
+# Displays the disclaimer
+@app.route('/disclaimer')
+def disclaimer_page():
+    return render_template('financialDisclaimer.html',
+                           BASE_HOST=BASE_HOST)
 
 
 # Checks if this email has already been confirmed
