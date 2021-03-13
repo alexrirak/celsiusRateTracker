@@ -1,0 +1,56 @@
+{% extends "template.html" %}
+
+{% block scripts %}
+    <script type="text/javascript" src="/static/js/unsub.js"></script>
+{% endblock %}
+
+{% block content %}
+    <div class="text-center">
+        <h1>Unsubscribe?</h1>
+
+        {% if sub_error %}
+
+            <div class="alert alert-danger" role="alert" id="signupFailure">
+                <h4 class="alert-heading"><i class="bi bi-x-square"></i> Oops! Something went wrong!</h4>
+                <p>Please confirm you entered the correct URL or try again later. If this problem persist please contact us.</p>
+                <p><a href="{{ BASE_HOST }}" >Click here to go back to the main page</a></p>
+            </div>
+
+        {% else %}
+
+            <div class="card w-75 mx-auto mt-3">
+                <div class="card-body">
+                    <h4 class="card-title">Do you really want to unsubscribe?</h4>
+
+                    <div class="alert alert-success" role="alert" id="unsubscribeSuccess" style="display: none;">
+                        <h4 class="alert-heading"><i class="bi bi-check-square"></i> You have been unsubscribed!</h4>
+                        <p>If you change your mind you can sign up again via the main page.</p>
+                        <p><a href="{{ BASE_HOST }}" >Click here to go back to the main page</a></p>
+                    </div>
+
+                    <div class="alert alert-danger" role="alert" id="unsubscribeFailure" style="display: none;">
+                        <h4 class="alert-heading"><i class="bi bi-x-square"></i> Oops! Something went wrong!</h4>
+                        <p>Please confirm you entered the correct URL or try again later. If this problem persist please contact us.</p>
+                        <p><a href="{{ BASE_HOST }}" >Click here to go back to the main page</a></p>
+                    </div>
+
+                    <p class="card-text">You are currently subscribed as <b style='font-family: "Lucida Console", "Courier New", monospace;'>{{ email }}</b> to the following coins:</p>
+
+                    <ul class="list-group w-50 mx-auto mb-3">
+                        {% for coin in subscribed_coins %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            {{ coin.name|upper}} ({{ coin.symbol|upper}})
+                            <span class="badge"><img class="coinLogo" src="{{ coin.image }}" alt="{{ coin.name }}" title="{{ coin.name }}"></span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+
+                    <a href="#" class="btn btn-danger" id="unsubscribeButton" data-unsub="{{ email_id }}">Unsubscribe</a>
+                    <a href="{{ BASE_HOST }}" class="btn btn-primary">Cancel</a>
+                </div>
+            </div>
+
+        {% endif %}
+
+    </div>
+{% endblock %}

@@ -10,6 +10,8 @@ import ssl
 import datetime
 import uuid
 import os
+import binascii
+import urllib.parse
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from dotenv import load_dotenv
@@ -39,6 +41,7 @@ GET_COIN_LIST = ""
 INSERT_EMAIL_ALERT = ""
 CHECK_EMAIL_CONFIRMED = ""
 CHECK_SUBSCRIPTION_EXISTS = ""
+GET_SUBSCRIBED_COINS = ""
 
 
 # Renders the main view
@@ -61,6 +64,7 @@ def fetch_coin_data():
     columns = mycursor.description
     result = [{columns[index][0]: column for index, column in enumerate(value)} for value in mycursor.fetchall()]
 
+    mycursor.close()
     mydb.close()
 
     return json.dumps(result, default=str)
@@ -145,13 +149,6 @@ def process_coin_rates():
     return ('Success', 200)
 
 
-# TODO: remove this method
-@app.route('/triggerEmail')
-def trigger_email():
-    send_out_email_alerts(["BTC"])
-    return ('Success', 200)
-
-
 # Given an email and list of coins subscribes for alerts
 @app.route('/registerEmail', methods=['POST'])
 def register_email():
@@ -180,6 +177,9 @@ def confirm_email(confirmation_id: str):
 
     mycursor = mydb.cursor()
 
+    # this should make no difference if its the id we expect but it will hopefully prevent malicious input
+    confirmation_id = urllib.parse.quote_plus(confirmation_id)
+
     result_args = mycursor.callproc('sp_ConfirmEmail',[confirmation_id, 0])
     mydb.commit()
 
@@ -191,6 +191,51 @@ def confirm_email(confirmation_id: str):
                            success=True if int(result_args[1]) == 1 else False,
                            BASE_HOST=BASE_HOST)
 
+
+# Displays the unsubscribe page given an email id string
+# email id is just the person's email in hex encoded form
+@app.route('/unsubscribe/<string:email_id>')
+def unsubscribe_email_page(email_id: str):
+    email = binascii.unhexlify(email_id.encode()).decode()
+
+    mydb = get_db_connection()
+
+    mycursor = mydb.cursor()
+
+    mycursor.execute(GET_SUBSCRIBED_COINS % email)
+
+    # this maps the column names onto the result set so that there is no guessing
+    columns = mycursor.description
+    subscribed_coins = [{columns[index][0]: column for index, column in enumerate(value)} for value in mycursor.fetchall()]
+
+    mycursor.close()
+    mydb.close()
+
+    return render_template('unsubscribe.html',
+                           env=ENVIRONMENT,
+                           email=email,
+                           email_id=email_id,
+                           BASE_HOST=BASE_HOST,
+                           subscribed_coins=subscribed_coins,
+                           sub_error=True if len(subscribed_coins) == 0 else False)
+
+
+# Calls a store proc to unsubscribe (delete) given email from the DB
+@app.route('/unsubscribe/<string:email_id>', methods=['DELETE'])
+def unsubscribe_email(email_id: str):
+    email = binascii.unhexlify(email_id.encode()).decode()
+
+    mydb = get_db_connection()
+
+    mycursor = mydb.cursor()
+
+    mycursor.callproc('sp_Unsubscribe', [email])
+    mydb.commit()
+
+    mycursor.close()
+    mydb.close()
+
+    return ('Success', 200)
 
 
 # Checks if this email has already been confirmed
@@ -276,6 +321,7 @@ def get_subscribed_emails(changed_rates):
     columns = mycursor.description
     result = [{columns[index][0]: column for index, column in enumerate(value)} for value in mycursor.fetchall()]
 
+    mycursor.close()
     mydb.close()
 
     return result
@@ -330,6 +376,7 @@ def get_db_connection():
         database=DATABASE_SCHM
     )
 
+
 # Returns the list of coins in the DB
 def get_coin_list():
     mydb = get_db_connection()
@@ -342,6 +389,7 @@ def get_coin_list():
     columns = mycursor.description
     result = [{columns[index][0]: column for index, column in enumerate(value)} for value in mycursor.fetchall()]
 
+    mycursor.close()
     mydb.close()
 
     return result
@@ -375,7 +423,8 @@ def send_email_confirmation_request(to_email: str, confirm_id: str):
 
 # Sends an email using the rate change template to the given email
 def send_rate_change_notification(to_email: str, coinData):
-    body = render_template('emailAlert.html', coinData=coinData, BASE_HOST=BASE_HOST)
+    email_id = binascii.hexlify(to_email.encode()).decode()
+    body = render_template('emailAlert.html', coinData=coinData, BASE_HOST=BASE_HOST, EMAIL_ID=email_id)
     send_email(to_email, "[Celsius Tracker] Celsius Rate Change", body)
 
 
@@ -394,6 +443,7 @@ GET_COIN_LIST = get_string_from_file('sql/getCoinList.sql')
 INSERT_EMAIL_ALERT = get_string_from_file('sql/insertEmailAlert.sql')
 CHECK_EMAIL_CONFIRMED = get_string_from_file('sql/checkIfEmailConfirmed.sql')
 CHECK_SUBSCRIPTION_EXISTS = get_string_from_file('sql/checkIfSubscriptionExists.sql')
+GET_SUBSCRIBED_COINS = get_string_from_file('sql/getSubscribedCoins.sql')
 
 # Start the scheduler
 sched.start()
