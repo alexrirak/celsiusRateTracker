@@ -17,4 +17,32 @@ $(document).ready(function() {
         });
     });
 
+    $("#unsubscribeContinueButton").click(function () {
+        $("#unsubscribeFailure").hide();
+        email = $("#unsubscribeEmail").val()
+
+        if (!isEmail(email)) {
+            $("#unsubscribeFailure").show();
+            return;
+        }
+
+        $.get( "/unsubscribeCheck/"+email, function(data) {
+            window.location = data.emailId
+        }).fail(function() {
+            $("#unsubscribeFailure").show();
+        })
+
+
+
+    });
+
 });
+
+/**
+ * Uses a Reg-Ex to verify if an email is valid
+ * @param {string} email string to check
+ */
+function isEmail(email) {
+  var regex = /^([a-zA-Z0-9_.+-])+\@(([a-zA-Z0-9-])+\.)+([a-zA-Z0-9]{2,4})+$/;
+  return regex.test(email);
+}

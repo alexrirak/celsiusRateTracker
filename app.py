@@ -197,7 +197,9 @@ def confirm_email(confirmation_id: str):
 @app.route('/unsubscribe/')
 def unsubscribe_landing_page():
     #TODO: write the landing page
-    return ('Success', 200)
+    return render_template('unsubscribeLanding.html',
+                           env=ENVIRONMENT,
+                           BASE_HOST=BASE_HOST)
 
 
 # Displays the unsubscribe page given an email id string
@@ -251,6 +253,17 @@ def unsubscribe_email(email_id: str):
 def disclaimer_page():
     return render_template('financialDisclaimer.html',
                            BASE_HOST=BASE_HOST)
+
+
+# Checks whether a subscription exists for the given email
+# if it does then returns the email id
+@app.route('/unsubscribeCheck/<string:email>')
+def check_unsubscribe_email(email: str):
+    if (is_email_confirmed(email)):
+        email_id = binascii.hexlify(email.encode()).decode()
+        return ({"emailId":email_id}, 200)
+    else:
+        return ('NotFound', 404)
 
 
 # Checks if this email has already been confirmed
