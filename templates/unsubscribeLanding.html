@@ -1,0 +1,31 @@
+{% extends "template.html" %}
+
+{% block scripts %}
+    <script type="text/javascript" src="/static/js/unsub.js"></script>
+{% endblock %}
+
+{% block content %}
+    <div class="text-center">
+        <h1>Unsubscribe?</h1>
+
+            <div class="card w-75 mx-auto mt-3">
+                <div class="card-body">
+                    <h4 class="card-title">Enter the email you want to unsubscribe</h4>
+
+                    <div class="alert alert-danger" role="alert" id="unsubscribeFailure" style="display: none;">
+                        <h4 class="alert-heading"><i class="bi bi-x-square"></i> Oops! Something went wrong!</h4>
+                        <p>Please confirm you entered the correct email or try again later. If this problem persist please contact us.</p>
+                        <p><a href="{{ BASE_HOST }}" >Click here to go back to the main page</a></p>
+                    </div>
+
+                    <div class="mb-3">
+                        <input type="email" class="form-control" id="unsubscribeEmail" placeholder="name@example.com">
+                    </div>
+
+
+                    <a href="#" class="btn btn-danger" id="unsubscribeContinueButton">Continue</a>
+                    <a href="{{ BASE_HOST }}" class="btn btn-primary">Cancel</a>
+                </div>
+            </div>
+    </div>
+{% endblock %}
