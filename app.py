@@ -251,7 +251,16 @@ def unsubscribe_email(email_id: str):
 # Displays the disclaimer
 @app.route('/disclaimer')
 def disclaimer_page():
-    return render_template('financialDisclaimer.html',
+    return render_template('disclaimer.html',
+                           env=ENVIRONMENT,
+                           BASE_HOST=BASE_HOST)
+
+
+# Displays the support us page
+@app.route('/supportUs')
+def support_us_page():
+    return render_template('supportUs.html',
+                           env=ENVIRONMENT,
                            BASE_HOST=BASE_HOST)
 
 
