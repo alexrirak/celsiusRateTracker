@@ -8,6 +8,18 @@
         <link href="https://cdn.datatables.net/1.10.23/css/dataTables.bootstrap5.min.css" rel="stylesheet">
 
         <link href="/static/css/style.css" rel="stylesheet">
+
+        {% if 'PROD' == env|upper %}
+            <!-- Global site tag (gtag.js) - Google Analytics -->
+            <script async src="https://www.googletagmanager.com/gtag/js?id=G-WS17W6Z9Y8"></script>
+            <script>
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+
+              gtag('config', 'G-WS17W6Z9Y8');
+            </script>
+        {% endif %}
     </head>
 
     <body>
