@@ -196,7 +196,6 @@ def confirm_email(confirmation_id: str):
 # For users not coming from an email it encodes he email
 @app.route('/unsubscribe/')
 def unsubscribe_landing_page():
-    #TODO: write the landing page
     return render_template('unsubscribeLanding.html',
                            env=ENVIRONMENT,
                            BASE_HOST=BASE_HOST)
