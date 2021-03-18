@@ -1,1 +1,0 @@
-SELECT * FROM coinAlerts WHERE email = "%s" AND coin = "%s"
