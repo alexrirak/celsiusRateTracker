@@ -159,11 +159,18 @@ def register_email():
         emailConfirmed = is_email_confirmed(request.json["email"])
         confirmId = str(uuid.uuid4())
         existing_coin_subscriptions = get_subscriptions(request.json["email"])
+        insert_data = []
         for coin in request.json["coins"]:
             # Dont duplicate if subscription already exists
             if coin in existing_coin_subscriptions:
                 continue
-            insert_email_into_db(request.json["email"], coin, emailConfirmed, confirmId if not emailConfirmed else None)
+            insert_data.append((coin, request.json["email"], emailConfirmed, confirmId if not emailConfirmed else None))
+
+        with get_db_connection() as db:
+            with db.cursor() as cursor:
+                # The MYSQL executor optimizes our insert into a single query when using executemany
+                cursor.executemany(INSERT_EMAIL_ALERT, insert_data)
+                db.commit()
 
         if(not emailConfirmed):
             send_email_confirmation_request(request.json["email"], confirmId)
@@ -300,14 +307,6 @@ def get_subscriptions(email: str):
                 return result[0].split(",")
 
             return []
-
-
-# Inserts given email and coin into the database for alerts
-def insert_email_into_db(email: str, coin: str, confirmed=False, confirmId=None):
-    with get_db_connection() as db:
-        with db.cursor() as cursor:
-            cursor.execute(INSERT_EMAIL_ALERT, (coin, email, 1 if confirmed else 0, confirmId))
-            db.commit()
 
 
 # Send out email alerts for the changed rates
