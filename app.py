@@ -40,8 +40,8 @@ GET_SUBSCRIBED_EMAILS = ""
 GET_COIN_LIST = ""
 INSERT_EMAIL_ALERT = ""
 CHECK_EMAIL_CONFIRMED = ""
-CHECK_SUBSCRIPTION_EXISTS = ""
 GET_SUBSCRIBED_COINS = ""
+GET_SUBSCRIPTION_STRING_BY_EMAIL = ""
 
 
 # Renders the main view
@@ -158,11 +158,19 @@ def register_email():
         # Checks if this email has already been confirmed
         emailConfirmed = is_email_confirmed(request.json["email"])
         confirmId = str(uuid.uuid4())
+        existing_coin_subscriptions = get_subscriptions(request.json["email"])
+        insert_data = []
         for coin in request.json["coins"]:
             # Dont duplicate if subscription already exists
-            if does_subscription_exist(request.json["email"], coin):
+            if coin in existing_coin_subscriptions:
                 continue
-            insert_email_into_db(request.json["email"], coin, emailConfirmed, confirmId if not emailConfirmed else None)
+            insert_data.append((coin, request.json["email"], emailConfirmed, confirmId if not emailConfirmed else None))
+
+        with get_db_connection() as db:
+            with db.cursor() as cursor:
+                # The MYSQL executor optimizes our insert into a single query when using executemany
+                cursor.executemany(INSERT_EMAIL_ALERT, insert_data)
+                db.commit()
 
         if(not emailConfirmed):
             send_email_confirmation_request(request.json["email"], confirmId)
@@ -267,7 +275,7 @@ def support_us_page():
 # if it does then returns the email id
 @app.route('/unsubscribeCheck/<string:email>')
 def check_unsubscribe_email(email: str):
-    if (is_email_confirmed(email)):
+    if is_email_confirmed(email):
         email_id = binascii.hexlify(email.encode()).decode()
         return ({"emailId":email_id}, 200)
     else:
@@ -276,54 +284,29 @@ def check_unsubscribe_email(email: str):
 
 # Checks if this email has already been confirmed
 def is_email_confirmed(email: str):
-    mydb = get_db_connection()
+    with get_db_connection() as db:
+        with db.cursor() as cursor:
+            cursor.execute(CHECK_EMAIL_CONFIRMED % email)
 
-    mycursor = mydb.cursor()
-    mycursor.execute(CHECK_EMAIL_CONFIRMED % email)
+            existing_row = cursor.fetchone()
 
-    existing_row = mycursor.fetchone()
-
-    exists = False
-
-    if existing_row[0] is not None and int(existing_row[0]) == 1:
-        exists = True
-
-    mycursor.close()
-    mydb.close()
-
-    return exists
+            if existing_row[0] is not None and int(existing_row[0]) == 1:
+                return True
+            return False
 
 
-# Checks if this subscription already exists
-def does_subscription_exist(email: str, coin: str):
-    mydb = get_db_connection()
+# Returns a list of subscriptions given an email
+def get_subscriptions(email: str):
 
-    mycursor = mydb.cursor()
-    mycursor.execute(CHECK_SUBSCRIPTION_EXISTS % (email, coin))
+    with get_db_connection() as db:
+        with db.cursor() as cursor:
+            cursor.execute(GET_SUBSCRIPTION_STRING_BY_EMAIL % (email))
+            result = cursor.fetchone()
 
-    existing_row = mycursor.fetchone()
+            if result is not None:
+                return result[0].split(",")
 
-    exists = False
-
-    if existing_row is not None:
-        exists = True
-
-    mycursor.close()
-    mydb.close()
-
-    return exists
-
-
-# Inserts given email and coin into the database for alerts
-def insert_email_into_db(email: str, coin: str, confirmed=False, confirmId=None):
-    mydb = get_db_connection()
-
-    mycursor = mydb.cursor()
-    mycursor.execute(INSERT_EMAIL_ALERT, (coin, email, 1 if confirmed else 0, confirmId))
-    mydb.commit()
-
-    mycursor.close()
-    mydb.close()
+            return []
 
 
 # Send out email alerts for the changed rates
@@ -478,8 +461,8 @@ GET_SUBSCRIBED_EMAILS = get_string_from_file('sql/getSubscribedEmails.sql')
 GET_COIN_LIST = get_string_from_file('sql/getCoinList.sql')
 INSERT_EMAIL_ALERT = get_string_from_file('sql/insertEmailAlert.sql')
 CHECK_EMAIL_CONFIRMED = get_string_from_file('sql/checkIfEmailConfirmed.sql')
-CHECK_SUBSCRIPTION_EXISTS = get_string_from_file('sql/checkIfSubscriptionExists.sql')
 GET_SUBSCRIBED_COINS = get_string_from_file('sql/getSubscribedCoins.sql')
+GET_SUBSCRIPTION_STRING_BY_EMAIL = get_string_from_file('sql/getSubscriptionsStringByEmail.sql')
 
 # Start the scheduler
 sched.start()
