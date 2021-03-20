@@ -81,6 +81,7 @@ $(document).ready(function() {
                         "</div>");
                  document.getElementById('celSlider').switchButton();
                  $("#celSlider").change(function(){
+                    $("td:has(\"[data-type='inKindRate']\")").addClass("flash")
                      if ($("[data-type='celRate']").is(":visible")) {
                          $("[data-type='celRate']").hide()
                          $("[data-type='inKindRate']").show()
@@ -88,6 +89,9 @@ $(document).ready(function() {
                          $("[data-type='celRate']").show()
                          $("[data-type='inKindRate']").hide()
                      }
+                     setTimeout( function(){
+                        $("td:has(\"[data-type='inKindRate']\")").removeClass("flash")
+                    }, 1000);
 
                 });
         }
