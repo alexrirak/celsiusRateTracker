@@ -1,17 +1,46 @@
 $(document).ready(function() {
-    $('#rateTable').DataTable( {
+    var rateTable = $('#rateTable').DataTable( {
         ajax: {
             url: '/fetchCoinData',
             dataSrc: function (json) {
                 var return_data = new Array();
                 for(var i=0;i< json.length; i++) {
-                    rateChange = parseFloat(json[i].latest_rate) - parseFloat(json[i].prior_rate);
+                    convertToCel = $("#celSlider").is(":checked");
+                    rateChange = [
+                        APRtoAPY(inKindToCel(parseFloat(json[i].latest_rate))) - APRtoAPY(inKindToCel(parseFloat(json[i].prior_rate))),
+                        APRtoAPY(parseFloat(json[i].latest_rate)) - APRtoAPY(parseFloat(json[i].prior_rate))
+                    ];
                     return_data.push([
                         "<img class='coinLogo' src='" + json[i].image + "' alt='" + json[i].name + "' title='" + json[i].name + "'/><span style='display:none;'>" + json[i].name + "</span>",
                         json[i].coin,
-                        json[i].latest_rate,
-                        json[i].prior_rate,
-                        [json[i].prior_rate ? rateChange > 0 ? "<span class='badge bg-success'>" + (rateChange * 100).toFixed(2) + " % </span>" : "<span class='badge bg-danger'>" +  (rateChange * 100).toFixed(2) + " % </span>" : "<span class='badge bg-secondary'>Unknown<sup>*</sup></span>",(rateChange * 100).toFixed(2)],
+                        [APRtoAPY(parseFloat(json[i].latest_rate)),
+                            "<span data-type='celRate' style='display: none'>"
+                            + (parseFloat(APRtoAPY(inKindToCel(parseFloat(json[i].latest_rate)))) * 100).toFixed(2) + " %"
+                            + "</span><span data-type='inKindRate'>"
+                            + (parseFloat(APRtoAPY(parseFloat(json[i].latest_rate))) * 100).toFixed(2) + " %"
+                            + "</span>"],
+                        json[i].prior_rate ?
+                            [APRtoAPY(parseFloat(json[i].prior_rate)),
+                                "<span data-type='celRate' style='display: none'>"
+                                + (parseFloat(APRtoAPY(inKindToCel(parseFloat(json[i].prior_rate)))) * 100).toFixed(2) + " %"
+                                + "</span><span data-type='inKindRate'>"
+                                + (parseFloat(APRtoAPY(parseFloat(json[i].prior_rate))) * 100).toFixed(2) + " %"
+                                + "</span>"]
+                            : ["<span class='badge bg-secondary'>Unknown<sup>*</sup></span>"],
+                        json[i].prior_rate ?
+                            [rateChange[0],
+                                rateChange[0] > 0 ?
+                                    "<span class='badge bg-success'><span data-type='celRate' style='display: none'>"
+                                    + (rateChange[0] * 100).toFixed(2) + " % "
+                                    + "</span><span data-type='inKindRate'>"
+                                    + (rateChange[1] * 100).toFixed(2) + " % "
+                                    + "</span></span>"
+                                    : "<span class='badge bg-danger'><span data-type='celRate' style='display: none'>"
+                                    + (rateChange[0] * 100).toFixed(2) + " % "
+                                    + "</span><span data-type='inKindRate'>"
+                                    + (rateChange[1] * 100).toFixed(2) + " % "
+                                    + "</span></span>"]
+                            : ["<span class='badge bg-secondary'>Unknown<sup>*</sup></span>"],
                         json[i].latest_date ? new Date(json[i].latest_date).toDateString() : "<span class='badge bg-secondary'>Unknown<sup>*</sup></span>",
                         "<button type='button' class='btn btn-outline-secondary btn-lg' data-bs-toggle='modal' data-bs-target='#signUpModal' data-bs-coin='" + json[i].coin + "'><i class='bi bi-alarm'></i></button>"
                     ]);
@@ -24,23 +53,50 @@ $(document).ready(function() {
             { },
             {
                 render: function (data, type) {
-                    return type === 'sort' ? data : (APRtoAPY(parseFloat(data)) * 100).toFixed(2) + " %";
+                    return type === 'sort' ? data[0] : data[1];
                 }
             },
             {
                 render: function (data, type) {
-                    return data ?  type === 'sort' ? data : (APRtoAPY(parseFloat(data)) * 100).toFixed(2) + " %" : "<span class='badge bg-secondary'>Unknown<sup>*</sup></span>";
+                    return type === 'sort' ? data[0] : data[1] ? data[1] : data[0];
                 }
             },
             {
                 render: function (data, type) {
-                    return type === 'sort' ? data[1] : data[0];
+                    return type === 'sort' ? data[0] : data[1] ? data[1] : data[0];
                 }
             },
             { },
             { }
-            ]
+            ],
+        initComplete: function(){
+                $("#rateTable_filter").parent()
+                    .html("<div class=\"row\">" +
+                            "<div class=\"col-sm-12 col-md-6\">" +
+                                "<input type=\"checkbox\" data-onlabel=\"CEL Rates\" data-offlabel=\"In-Kind Rates\" data-onstyle=\"outline-warning\" data-offstyle=\"outline-secondary\" data-width=\"175\" data-size=\"sm\" id='celSlider'>" +
+                            "</div>" +
+                            "<div class=\"col-sm-12 col-md-6\">" +
+                            $("#rateTable_filter").parent().html() +
+                            "</div>" +
+                        "</div>");
+                 document.getElementById('celSlider').switchButton();
+                 $("#celSlider").change(function(){
+                    $("td:has(\"[data-type='inKindRate']\")").addClass("flash")
+                     if ($("[data-type='celRate']").is(":visible")) {
+                         $("[data-type='celRate']").hide()
+                         $("[data-type='inKindRate']").show()
+                     } else {
+                         $("[data-type='celRate']").show()
+                         $("[data-type='inKindRate']").hide()
+                     }
+                     setTimeout( function(){
+                        $("td:has(\"[data-type='inKindRate']\")").removeClass("flash")
+                    }, 1000);
+
+                });
+        }
     });
+
     $(".form-check-input").change(function(){
         if ($( this ).is(":checked")) {
             className = "#img-" + $( this )[0].id
@@ -138,6 +194,14 @@ $(document).ready(function() {
  */
 function APRtoAPY(apr_rate) {
     return (Math.pow((1 + (apr_rate / 52)), (52))) - 1
+}
+
+/**
+ * Converts in-kind to cel rate with R*1.3
+ * @param {float} apr_rate Interest rate to convert
+ */
+function inKindToCel(apr_rate) {
+    return apr_rate * 1.3
 }
 
 /**
