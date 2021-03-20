@@ -47,7 +47,7 @@ $(document).ready(function() {
                 $("#rateTable_filter").parent()
                     .html("<div class=\"row\">" +
                             "<div class=\"col-sm-12 col-md-6\">" +
-                                "<input type=\"checkbox\" data-onlabel=\"CEL Rate\" data-offlabel=\"In-Kind Rate\" data-onstyle=\"outline-warning\" data-offstyle=\"outline-secondary\" data-width=\"175\" data-size=\"sm\" id='celSlider'>" +
+                                "<input type=\"checkbox\" data-onlabel=\"CEL Rates\" data-offlabel=\"In-Kind Rates\" data-onstyle=\"outline-warning\" data-offstyle=\"outline-secondary\" data-width=\"175\" data-size=\"sm\" id='celSlider'>" +
                             "</div>" +
                             "<div class=\"col-sm-12 col-md-6\">" +
                             $("#rateTable_filter").parent().html() +
