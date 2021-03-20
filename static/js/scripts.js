@@ -6,23 +6,27 @@ $(document).ready(function() {
                 var return_data = new Array();
                 for(var i=0;i< json.length; i++) {
                     convertToCel = $("#celSlider").is(":checked");
-                    rateChange = [
-                        APRtoAPY(inKindToCel(parseFloat(json[i].latest_rate))) - APRtoAPY(inKindToCel(parseFloat(json[i].prior_rate))),
-                        APRtoAPY(parseFloat(json[i].latest_rate)) - APRtoAPY(parseFloat(json[i].prior_rate))
-                    ];
+                    rateChange = json[i].coin.toUpperCase() == "CEL" ?
+                        [
+                            APRtoAPY(parseFloat(json[i].latest_rate)) - APRtoAPY(parseFloat(json[i].prior_rate)),
+                            APRtoAPY(parseFloat(json[i].latest_rate)) - APRtoAPY(parseFloat(json[i].prior_rate))
+                        ] : [
+                            APRtoAPY(inKindToCel(parseFloat(json[i].latest_rate))) - APRtoAPY(inKindToCel(parseFloat(json[i].prior_rate))),
+                            APRtoAPY(parseFloat(json[i].latest_rate)) - APRtoAPY(parseFloat(json[i].prior_rate))
+                        ];
                     return_data.push([
                         "<img class='coinLogo' src='" + json[i].image + "' alt='" + json[i].name + "' title='" + json[i].name + "'/><span style='display:none;'>" + json[i].name + "</span>",
                         json[i].coin,
                         [APRtoAPY(parseFloat(json[i].latest_rate)),
                             "<span data-type='celRate' style='display: none'>"
-                            + (parseFloat(APRtoAPY(inKindToCel(parseFloat(json[i].latest_rate)))) * 100).toFixed(2) + " %"
+                            + (parseFloat(APRtoAPY(json[i].coin.toUpperCase() == "CEL" ? parseFloat(json[i].latest_rate) : inKindToCel(parseFloat(json[i].latest_rate)))) * 100).toFixed(2) + " %"
                             + "</span><span data-type='inKindRate'>"
                             + (parseFloat(APRtoAPY(parseFloat(json[i].latest_rate))) * 100).toFixed(2) + " %"
                             + "</span>"],
                         json[i].prior_rate ?
                             [APRtoAPY(parseFloat(json[i].prior_rate)),
                                 "<span data-type='celRate' style='display: none'>"
-                                + (parseFloat(APRtoAPY(inKindToCel(parseFloat(json[i].prior_rate)))) * 100).toFixed(2) + " %"
+                                + (parseFloat(APRtoAPY(json[i].coin.toUpperCase() == "CEL" ? parseFloat(json[i].prior_rate) : inKindToCel(parseFloat(json[i].prior_rate)))) * 100).toFixed(2) + " %"
                                 + "</span><span data-type='inKindRate'>"
                                 + (parseFloat(APRtoAPY(parseFloat(json[i].prior_rate))) * 100).toFixed(2) + " %"
                                 + "</span>"]
