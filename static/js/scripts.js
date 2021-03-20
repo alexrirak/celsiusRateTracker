@@ -6,15 +6,41 @@ $(document).ready(function() {
                 var return_data = new Array();
                 for(var i=0;i< json.length; i++) {
                     convertToCel = $("#celSlider").is(":checked");
-                    rateChange = convertToCel
-                        ? APRtoAPY(inKindToCel(parseFloat(json[i].latest_rate))) - APRtoAPY(inKindToCel(parseFloat(json[i].prior_rate)))
-                        : APRtoAPY(parseFloat(json[i].latest_rate)) - APRtoAPY(parseFloat(json[i].prior_rate));
+                    rateChange = [
+                        APRtoAPY(inKindToCel(parseFloat(json[i].latest_rate))) - APRtoAPY(inKindToCel(parseFloat(json[i].prior_rate))),
+                        APRtoAPY(parseFloat(json[i].latest_rate)) - APRtoAPY(parseFloat(json[i].prior_rate))
+                    ];
                     return_data.push([
                         "<img class='coinLogo' src='" + json[i].image + "' alt='" + json[i].name + "' title='" + json[i].name + "'/><span style='display:none;'>" + json[i].name + "</span>",
                         json[i].coin,
-                        convertToCel ? APRtoAPY(inKindToCel(parseFloat(json[i].latest_rate))) : APRtoAPY(parseFloat(json[i].latest_rate)),
-                        convertToCel ? APRtoAPY(inKindToCel(parseFloat(json[i].prior_rate))) : APRtoAPY(parseFloat(json[i].prior_rate)),
-                        [json[i].prior_rate ? rateChange > 0 ? "<span class='badge bg-success'>" + (rateChange * 100).toFixed(2) + " % </span>" : "<span class='badge bg-danger'>" +  (rateChange * 100).toFixed(2) + " % </span>" : "<span class='badge bg-secondary'>Unknown<sup>*</sup></span>",(rateChange * 100).toFixed(2)],
+                        [APRtoAPY(parseFloat(json[i].latest_rate)),
+                            "<span data-type='celRate' style='display: none'>"
+                            + (parseFloat(APRtoAPY(inKindToCel(parseFloat(json[i].latest_rate)))) * 100).toFixed(2) + " %"
+                            + "</span><span data-type='inKindRate'>"
+                            + (parseFloat(APRtoAPY(parseFloat(json[i].latest_rate))) * 100).toFixed(2) + " %"
+                            + "</span>"],
+                        json[i].prior_rate ?
+                            [APRtoAPY(parseFloat(json[i].prior_rate)),
+                                "<span data-type='celRate' style='display: none'>"
+                                + (parseFloat(APRtoAPY(inKindToCel(parseFloat(json[i].prior_rate)))) * 100).toFixed(2) + " %"
+                                + "</span><span data-type='inKindRate'>"
+                                + (parseFloat(APRtoAPY(parseFloat(json[i].prior_rate))) * 100).toFixed(2) + " %"
+                                + "</span>"]
+                            : ["<span class='badge bg-secondary'>Unknown<sup>*</sup></span>"],
+                        json[i].prior_rate ?
+                            [rateChange[0],
+                                rateChange[0] > 0 ?
+                                    "<span class='badge bg-success'><span data-type='celRate' style='display: none'>"
+                                    + (rateChange[0] * 100).toFixed(2) + " % "
+                                    + "</span><span data-type='inKindRate'>"
+                                    + (rateChange[1] * 100).toFixed(2) + " % "
+                                    + "</span></span>"
+                                    : "<span class='badge bg-danger'><span data-type='celRate' style='display: none'>"
+                                    + (rateChange[0] * 100).toFixed(2) + " % "
+                                    + "</span><span data-type='inKindRate'>"
+                                    + (rateChange[1] * 100).toFixed(2) + " % "
+                                    + "</span></span>"]
+                            : ["<span class='badge bg-secondary'>Unknown<sup>*</sup></span>"],
                         json[i].latest_date ? new Date(json[i].latest_date).toDateString() : "<span class='badge bg-secondary'>Unknown<sup>*</sup></span>",
                         "<button type='button' class='btn btn-outline-secondary btn-lg' data-bs-toggle='modal' data-bs-target='#signUpModal' data-bs-coin='" + json[i].coin + "'><i class='bi bi-alarm'></i></button>"
                     ]);
@@ -27,17 +53,17 @@ $(document).ready(function() {
             { },
             {
                 render: function (data, type) {
-                    return type === 'sort' ? data : (parseFloat(data) * 100).toFixed(2) + " %";
+                    return type === 'sort' ? data[0] : data[1];
                 }
             },
             {
                 render: function (data, type) {
-                    return data ?  type === 'sort' ? data : (parseFloat(data) * 100).toFixed(2) + " %" : "<span class='badge bg-secondary'>Unknown<sup>*</sup></span>";
+                    return type === 'sort' ? data[0] : data[1] ? data[1] : data[0];
                 }
             },
             {
                 render: function (data, type) {
-                    return type === 'sort' ? data[1] : data[0];
+                    return type === 'sort' ? data[0] : data[1] ? data[1] : data[0];
                 }
             },
             { },
@@ -55,7 +81,14 @@ $(document).ready(function() {
                         "</div>");
                  document.getElementById('celSlider').switchButton();
                  $("#celSlider").change(function(){
-                    rateTable.ajax.reload();
+                     if ($("[data-type='celRate']").is(":visible")) {
+                         $("[data-type='celRate']").hide()
+                         $("[data-type='inKindRate']").show()
+                     } else {
+                         $("[data-type='celRate']").show()
+                         $("[data-type='inKindRate']").hide()
+                     }
+
                 });
         }
     });
