@@ -201,7 +201,7 @@ function APRtoAPY(apr_rate) {
  * @param {float} apr_rate Interest rate to convert
  */
 function inKindToCel(apr_rate) {
-    return apr_rate * 1.3
+    return apr_rate * 1.25
 }
 
 /**
