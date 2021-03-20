@@ -82,18 +82,27 @@ $(document).ready(function() {
                  document.getElementById('celSlider').switchButton();
                  $("#celSlider").change(function(){
                     $("td:has(\"[data-type='inKindRate']\")").addClass("flash")
-                     if ($("[data-type='celRate']").is(":visible")) {
-                         $("[data-type='celRate']").hide()
-                         $("[data-type='inKindRate']").show()
-                     } else {
+                     if ($("#celSlider").is(":checked")) {
                          $("[data-type='celRate']").show()
                          $("[data-type='inKindRate']").hide()
+                     } else {
+                         $("[data-type='celRate']").hide()
+                         $("[data-type='inKindRate']").show()
                      }
                      setTimeout( function(){
                         $("td:has(\"[data-type='inKindRate']\")").removeClass("flash")
                     }, 1000);
 
                 });
+        },
+        "drawCallback": function( settings ) {
+            if ($("#celSlider").is(":checked")) {
+                $("[data-type='celRate']").show();
+                $("[data-type='inKindRate']").hide();
+            } else {
+                $("[data-type='celRate']").hide();
+                $("[data-type='inKindRate']").show();
+            }
         }
     });
 
