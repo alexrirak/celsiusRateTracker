@@ -199,6 +199,8 @@ $(document).ready(function() {
         $("#signUpModalSubmit").click();
       }
     });
+
+    new bootstrap.Modal(document.getElementById('movingModal')).show();
 } );
 
 /**
