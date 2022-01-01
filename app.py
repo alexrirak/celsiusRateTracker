@@ -37,6 +37,7 @@ GET_METADATA_BY_COIN_QUERY = ""
 INSERT_COIN_METADATA_QUERY = ""
 UPDATE_COIN_METADATA_QUERY = ""
 GET_SUBSCRIBED_EMAILS = ""
+GET_ALL_SUBSCRIBED_EMAILS = ""
 GET_COIN_LIST = ""
 INSERT_EMAIL_ALERT = ""
 CHECK_EMAIL_CONFIRMED = ""
@@ -282,6 +283,38 @@ def check_unsubscribe_email(email: str):
         return ('NotFound', 404)
 
 
+@app.route('/migrationNotification/<string:confirm>')
+def send_migration_notification(confirm: str):
+    if confirm != "YES":
+        return ('ERROR', 500)
+
+    # Sends an email using the rate change template to the given email
+    emails = get_all_subscribed_emails()
+    body = render_template('emailMigrationNotice.html', BASE_HOST=BASE_HOST)
+    for email in emails:
+        send_email(email.get('email'), "[Celsius Tracker] We are Moving", body)
+
+    return (str(len(emails)), 200)
+
+
+# Gets the list of subscriber emails given a list of coins which changed
+def get_all_subscribed_emails():
+    mydb = get_db_connection()
+
+    mycursor = mydb.cursor()
+
+    # format the list as string but strip the brackets
+    mycursor.execute(GET_ALL_SUBSCRIBED_EMAILS)
+
+    # this maps the column names onto the result set so that there is no guessing
+    columns = mycursor.description
+    result = [{columns[index][0]: column for index, column in enumerate(value)} for value in mycursor.fetchall()]
+
+    mycursor.close()
+    mydb.close()
+
+    return result
+
 # Checks if this email has already been confirmed
 def is_email_confirmed(email: str):
     with get_db_connection() as db:
@@ -458,6 +491,7 @@ GET_METADATA_BY_COIN_QUERY = get_string_from_file('sql/getMetadataByCoin.sql')
 INSERT_COIN_METADATA_QUERY = get_string_from_file('sql/insertCoinMetadata.sql')
 UPDATE_COIN_METADATA_QUERY = get_string_from_file('sql/updateCoinMetadata.sql')
 GET_SUBSCRIBED_EMAILS = get_string_from_file('sql/getSubscribedEmails.sql')
+GET_ALL_SUBSCRIBED_EMAILS = get_string_from_file('sql/getAllSubscribedEmails.sql')
 GET_COIN_LIST = get_string_from_file('sql/getCoinList.sql')
 INSERT_EMAIL_ALERT = get_string_from_file('sql/insertEmailAlert.sql')
 CHECK_EMAIL_CONFIRMED = get_string_from_file('sql/checkIfEmailConfirmed.sql')
