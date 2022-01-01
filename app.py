@@ -292,7 +292,8 @@ def send_migration_notification(confirm: str):
     emails = get_all_subscribed_emails()
     body = render_template('emailMigrationNotice.html', BASE_HOST=BASE_HOST)
     for email in emails:
-        send_email(email.get('email'), "[Celsius Tracker] We are Moving", body)
+        print("Sending to ", email.get('email'))
+        send_email(email.get('email'), "[Celsius Tracker] We are Moving - Final Notice", body)
 
     return (str(len(emails)), 200)
 
